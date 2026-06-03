@@ -2,70 +2,102 @@
 
 ## Version 1: Peer-to-Peer Guide
 
-Hey! So, you've probably heard of GPT (Generative Pre-trained Transformer) a million times, but let's actually look under the hood at what a "Decoder-only" model is and why it's the engine behind almost every AI chatbot you use today.
+Hey! Let's talk about Decoder-only models. If you've used ChatGPT, Claude, or Llama, you've interacted with this architecture. While the previous section on Encoder-only models showed us how to "understand" text, Decoder-only models are built for one primary purpose: **generation**.
 
-If you're coming from the Encoder-only models we talked about in the previous section, you know that those models are great at understanding a whole sentence at once. But if you want to *generate* text—like writing a poem or coding a script—you need a different approach. That's where the Decoder-only architecture comes in.
+If you're feeling a bit rusty on the math, don't worry. As long as you remember the basics of linear algebra (specifically matrix multiplication), you'll be fine. If any specific term feels obscure, I'll give you a quick summary.
 
-### The Big Idea: The "Next-Token" Game
+### The Core Concept: Autoregression
 
-Imagine you're reading a sentence, but someone has put a piece of cardboard over everything to the right of the word you're currently reading. You can see everything that happened in the past, but you have no idea what's coming next. Your only job is to guess the very next word.
+At its heart, a Decoder-only model is an "autoregressive" engine. This is a fancy way of saying the model predicts the next part of a sequence based on all the parts that came before it.
 
-That is exactly how a Decoder-only model works. It is designed for **Causal Language Modeling**. "Causal" is just a fancy way of saying that the output depends only on previous inputs.
+Imagine you are writing a story. You don't write the whole book in one go; you write one word, then you look at what you've written, and you decide what the next word should be. You repeat this process over and over.
 
-> **Quick Refresh: Tokenization**
-> Since models can't read letters, we break text into "tokens" (chunks of characters, words, or sub-words). Think of tokens as the "alphabet" the model actually understands.
+> **Autoregression:** A process where the model's previous outputs are fed back into the model as inputs to generate the next output. In LLMs, this means the token predicted at step $t$ becomes part of the input sequence for step $t+1$.
 
-### How It Actually Works: Masked Self-Attention
+### How the Architecture Works
 
-The secret sauce here is something called **Masked Self-Attention**. 
+A Decoder-only model consists of a stack of identical layers. Each layer has two main components: a **Masked Multi-Head Attention** block and a **Feed-Forward Network (FFN)**.
 
-In a standard Transformer, every word looks at every other word. But if we did that during generation, the model would "cheat"—it would see the answer it's trying to predict! To prevent this, we use a mask.
+#### 1. Masked Multi-Head Attention
+In a standard Transformer, "attention" allows a token to look at every other token in the sequence to understand context. But in a generative model, we have a problem: we can't let the model "see the future." If the model is trying to predict the 4th word in a sentence, it shouldn't be allowed to look at the 5th word.
 
-Imagine the attention matrix as a grid. For a Decoder, we zero out the top-right half of that grid. This forces the model to only attend to tokens that came *before* the current one.
+To fix this, we use a **Causal Mask**. 
 
-**Visualizing the Mask:**
+Think of it like a sliding window. As the model processes the sequence, the mask blocks out everything to the right of the current token. 
+
+**Visualizing the Causal Mask:**
 
 ```mermaid
 graph TD
-    A[Token 1] --> B[Token 2]
-    A --> C[Token 3]
-    B --> C[Token 3]
-    C --> D[Predict Token 4]
-    style D fill:#f9f,stroke:#333,stroke-width:2px
+    subgraph Input_Sequence
+        T1[Token 1]
+        T2[Token 2]
+        T3[Token 3]
+    end
+
+    subgraph Attention_Flow
+        T1 --> T1
+        T2 --> T1
+        T2 --> T2
+        T3 --> T1
+        T3 --> T2
+        T3 --> T3
+    end
+
+    T1 -.->|Blocked| T2
+    T1 -.->|Blocked| T3
+    T2 -.->|Blocked| T3
+
+    style T1 fill:#f9f,stroke:#333
+    style T2 fill:#f9f,stroke:#333
+    style T3 fill:#f9f,stroke:#333
 ```
 
-In this flow, Token 3 can "see" Token 1 and 2, but Token 1 cannot see Token 3. This unidirectional flow is what makes the model "generative."
+In this diagram, you can see that Token 1 only attends to itself. Token 2 attends to Token 1 and itself. Token 3 attends to 1, 2, and itself. This unidirectional flow ensures the model remains "causal."
 
-### Why does this matter?
+#### 2. The Feed-Forward Network (FFN)
+After the attention block has figured out *which* other tokens are important, the FFN processes that information. Think of the attention block as the "context gatherer" and the FFN as the "knowledge processor." The FFN consists of two linear transformations with a non-linear activation function (like ReLU or GELU) in between. This is where the model's "factual knowledge" is largely stored.
 
-Because the model is trained on this "next-token prediction" task across billions of pages of the internet, it doesn't just learn grammar—it learns a world model. By predicting the next token in a physics textbook, it learns physics. By predicting the next token in a Python script, it learns to code.
+#### 3. The Output: Predicting the Token
+Once the data passes through all the layers, it reaches the final linear layer and a **Softmax** function.
 
-If you're feeling stuck, remember that the core difference is simple:
-- **Encoder:** "What does this whole sequence mean?" (Bidirectional)
-- **Decoder:** "Given what I've seen so far, what comes next?" (Unidirectional)
+> **Softmax:** A mathematical function that takes a vector of raw scores (logits) and transforms them into probabilities that sum to 1. It highlights the most likely candidate while suppressing others.
+
+The model looks at the probability distribution across its entire vocabulary (e.g., 50,000 possible tokens) and picks one. That token is then appended to the input, and the whole process starts over again.
+
+### Summary Comparison
+
+To keep it simple, here is how this differs from the Encoder you saw earlier:
+
+| Feature | Encoder-only (BERT) | Decoder-only (GPT) |
+| :--- | :--- | :--- |
+| **Attention** | Bidirectional (sees everything) | Unidirectional (sees the past) |
+| **Primary Goal** | Understanding / Classification | Text Generation |
+| **Processing** | Parallel (whole sequence at once) | Autoregressive (one token at a time) |
+| **Analogy** | A student reading a page to summarize it | A storyteller writing a book word-by-word |
 
 ---
 
 ## Version 2: Technical Summary
 
-### Decoder-only Architecture Overview
-Decoder-only models, exemplified by the GPT (Generative Pre-trained Transformer) family, are autoregressive language models designed primarily for generative tasks. Unlike bidirectional encoders, decoder-only architectures utilize a unidirectional attention mechanism to ensure that the prediction for a given token depends solely on the preceding sequence.
+### Decoder-only Architecture
+The Decoder-only architecture, as implemented in the GPT (Generative Pre-trained Transformer) series, is a stack of $L$ transformer layers designed for causal language modeling (CLM). Unlike the original Transformer's decoder, which included an encoder-decoder attention cross-attention layer, the Decoder-only variant removes this component, relying solely on masked self-attention.
 
 ### Causal Language Modeling (CLM)
-The primary objective of a decoder-only model is to maximize the likelihood of the next token in a sequence. Mathematically, for a sequence $x = (x_1, x_2, ..., x_n)$, the model estimates the conditional probability:
-
-$$P(x_i | x_1, ..., x_{i-1})$$
-
-This process is termed **Autoregressive Generation**, where the model's own previous outputs are fed back as inputs for subsequent tokens.
+The objective function for Decoder-only models is the minimization of negative log-likelihood of the next token given the previous sequence:
+$$\mathcal{L} = -\sum_{i=1}^{n} \log P(x_i | x_{<i}, \theta)$$
+where $x_{<i}$ denotes the sequence of tokens preceding position $i$.
 
 ### Masked Self-Attention Mechanism
-To enforce causality, decoder-only models implement **Causal Masking**. During the self-attention computation, a mask matrix $M$ is applied to the scaled dot-product attention:
-
+To prevent information leakage from future tokens, a causal mask $M$ is applied to the attention scores. The attention mechanism is defined as:
 $$\text{Attention}(Q, K, V) = \text{softmax}\left(\frac{QK^T}{\sqrt{d_k}} + M\right)V$$
+The mask $M$ is a matrix where $M_{ij} = 0$ for $i \ge j$ and $M_{ij} = -\infty$ for $i < j$. This ensures that the softmax output for positions $j > i$ is zero, effectively constraining the receptive field to the prefix.
 
-Where $M$ contains $-\infty$ for all positions $j > i$ and $0$ otherwise. This effectively prevents the attention mechanism from attending to future tokens, ensuring the model remains causal.
+### Architectural Components
+1. **Layer Normalization:** Typically applied as Pre-Norm (before the attention and FFN blocks) to improve gradient stability during training.
+2. **Feed-Forward Network (FFN):** A position-wise MLP consisting of two linear layers:
+   $$\text{FFN}(x) = \max(0, xW_1 + b_1)W_2 + b_2$$
+3. **Linear Output Layer:** A final linear projection from the model dimension $d_{model}$ to the vocabulary size $V$, followed by a softmax operation to produce the token probability distribution.
 
-### Key Architectural Characteristics
-- **Unidirectional Flow:** Information propagates from left to right.
-- **KV Caching:** To optimize inference, the Key ($K$) and Value ($V$) tensors for previous tokens are cached, eliminating the need to recompute them for each new token generated.
-- **Scaling Laws:** These models exhibit emergent properties (e.g., in-context learning) as a function of parameter count, dataset size, and compute budget, following predictable power-law distributions.
+### Computational Complexity
+The computational complexity of the self-attention mechanism is $O(n^2 \cdot d)$, where $n$ is the sequence length and $d$ is the embedding dimension. This quadratic scaling with respect to sequence length is the primary bottleneck for long-context window generation.
