@@ -1,99 +1,66 @@
-# Grading Guide: Module 1, Part 1
+# Grading Guide: Module 1, Part 1 (Foundations of Modern LLMs)
 
-This document provides the evaluation criteria and expected answers for the assignments in Module 1, Part 1.
-
----
-
-## Assignment 1: Transformer Architecture Analysis
-
-### Task 1: The AI Architect's Dilemma
-**Grading Scale:** 2 points per correct selection and justification (Total: 8 points).
-
-| Scenario | Expected Architecture | Key Justification Points |
-| :--- | :--- | :--- |
-| Medical Entity Extraction | **Encoder-only** | Needs bi-directional context to understand the entity in relation to surrounding text. Not generating new text, just labeling/extracting. |
-| Automated Code Doc | **Encoder-Decoder** | Takes one sequence (code) and transforms it into another sequence (natural language). Sequence-to-sequence task. |
-| Story Continuation | **Decoder-only** | Causal attention is required to generate tokens one by one. The focus is on predicting the next token based on a prefix. |
-| Legal Summarization | **Encoder-Decoder** | Requires encoding a large context (the contract) and decoding a condensed version (the summary). |
-
-**Evaluation:**
-- **Full Credit:** Correct architecture + justification referencing Bi-directional/Causal attention.
-- **Partial Credit:** Correct architecture but weak/generic justification.
-- **No Credit:** Incorrect architecture.
-
-### Task 2: Comparative Analysis Table
-**Grading Scale:** 1 point per cell (Total: 16 points).
-
-| Feature | Encoder-only | Decoder-only | Encoder-Decoder |
-| :--- | :--- | :--- | :--- |
-| **Attention Type** | Bi-directional | Causal (Masked) | Bi-directional (Enc) / Causal (Dec) |
-| **Primary Goal** | Understanding/Labeling | Generation | Translation/Transformation |
-| **Input/Output Ratio** | 1:1 (approx) | 1:Many | Many:Many |
-| **Best Use Case** | Classification/NER | Chatbots/Storytelling | Translation/Summarization |
+**Course:** CS601 - Advanced LLM Adaptation & Deployment  
+**Module:** 1, Part 1
 
 ---
 
-## Assignment 2: The Mechanics of Attention
+## 1. Test 1 Grading Rubric (100 Marks Total)
 
-### Task 1: Manual Attention Trace
-**Grading Scale:** 10 points.
+### Section A: Architecture & Design (40 Marks)
+**Question 1: Comparative Analysis (20 Marks)**
+- **Correct Objectives (6 Marks):** 2 marks each for correctly identifying the goals of Encoder-only (Understanding), Decoder-only (Generation), and Encoder-Decoder (Seq2Seq).
+- **Masking Mechanism (6 Marks):** 6 marks if the student correctly explains the causal mask and its purpose in preventing "looking ahead".
+- **Scenario (4 Marks):** 4 marks for a valid scenario (e.g., Translation) where Encoder-Decoder is superior.
+- **Conceptual Diagram (4 Marks):** 4 marks if the diagram logically shows the flow of data for the three architectures.
 
-**Step-by-Step Key:**
-1. **Raw Scores ($Q \cdot K$):**
-   - Cloud $\cdot$ Cloud: $(1*1) + (2*2) = 5$
-   - Cloud $\cdot$ Compute: $(1*2) + (2*1) = 4$
-2. **Scaled Scores ($\text{Score} / 2$):**
-   - Cloud: $5 / 2 = 2.5$
-   - Compute: $4 / 2 = 2.0$
-3. **Softmax Weights:**
-   - $e^{2.5} \approx 12.18$
-   - $e^{2.0} \approx 7.39$
-   - Total $\approx 19.57$
-   - Weight (Cloud) $\approx 12.18 / 19.57 \approx 0.62$
-   - Weight (Compute) $\approx 7.39 / 19.57 \approx 0.38$
-4. **Final Vector:**
-   - $(0.62 * [10, 0]) + (0.38 * [0, 20]) = [6.2, 7.6]$
+**Question 2: Mechanics of Attention (20 Marks)**
+- **Q, K, V Definitions (6 Marks):** 2 marks each for correct definitions.
+- **Multi-Head Purpose (6 Marks):** 6 marks for explaining that MHA allows attention to different semantic/syntactic features.
+- **Scaling Factor $\sqrt{d_k}$ (4 Marks):** 4 marks for explaining the prevention of softmax saturation.
+- **Complexity (4 Marks):** 4 marks for correctly identifying $O(N^2)$ complexity.
 
-**Evaluation:**
-- **Full Credit:** All steps correct.
-- **Partial Credit:** Correct logic but arithmetic errors.
-- **No Credit:** Incorrect approach to QKV.
+### Section B: Scaling Laws & MoE (30 Marks)
+**Question 3: Scaling Laws (15 Marks)**
+- **Compute-Optimal (5 Marks):** 5 marks for explaining the balance of model size and data for a given compute budget.
+- **Trade-off (5 Marks):** 5 marks for discussing the scaling of data vs model size.
+- **Prediction (5 Marks):** 5 marks for mentioning power-law relationships.
 
-### Task 2: Analytical Reflection
-**Grading Scale:** 5 points per answer (Total: 10 points).
+**Question 4: MoE & Routing (15 Marks)**
+- **Dense vs Sparse (5 Marks):** 5 marks for explaining that only a subset of parameters is active per token.
+- **Router Role (5 Marks):** 5 marks for explaining the gating network's role in mapping tokens to experts.
+- **Routing Diagram (5 Marks):** 5 marks for a diagram illustrating Token $\rightarrow$ Router $\rightarrow$ Experts $\rightarrow$ Aggregator.
 
-1. **Orthogonal Q and K:** The dot product is 0. This results in a baseline attention score before softmax. The model effectively "ignores" the token or treats it as unrelated.
-2. **Multi-Head Attention:** Allows the model to attend to different types of information (e.g., one head for syntax, one for semantics). This mirrors MoE in that different "heads" become specialists for different feature subspaces.
+### Section C: Base Model Training (30 Marks)
+**Question 5: Next-Token Prediction (15 Marks)**
+- **CLM Objective (5 Marks):** 5 marks for explaining $P(x_t | x_{1...t-1})$.
+- **Pre-training vs Fine-tuning (5 Marks):** 5 marks for distinguishing self-supervised pre-training from supervised fine-tuning.
+- **Vocab Impact (5 Marks):** 5 marks for discussing the trade-off between sequence length and softmax layer cost.
 
----
-
-## Assignment 3: Scaling and Sparse Activation
-
-### Task 1: Dense vs. Sparse Analysis
-**Grading Scale:** 5 points per answer (Total: 15 points).
-
-1. **Inference Cost:** Model B is 10x more efficient in terms of active FLOPs per token.
-2. **Capacity vs. Compute:** Increase the total number of experts. The active parameter count per token remains constant, but the model's overall knowledge capacity increases.
-3. **Training Stability:** Expert Collapse. If the router is not regularized, it may favor one expert, causing others to never be updated.
-
-### Task 2: Specialized MoE Router
-**Grading Scale:** 10 points.
-- **Experts (4 pts):** Logical medical specializations (e.g., Oncology, Pediatrics, etc.).
-- **Routing (3 pts):** Correct mapping (e.g., "MRI" $\rightarrow$ Radiology Expert).
-- **Conflict Resolution (3 pts):** Mention of weighted distribution or top-k routing.
+**Question 6: Compute & Infrastructure (15 Marks)**
+- **VRAM/Batch Size (5 Marks):** 5 marks for explaining how VRAM limits dictate max batch size.
+- **Memory Usage (5 Marks):** 5 marks for identifying that Optimizer states (Adam) usually dominate memory.
+- **Parallelism (5 Marks):** 5 marks for distinguishing Data Parallelism from Model Parallelism.
 
 ---
 
-## Assignment 4: Causal Modeling and Prediction
+## 2. Quiz 1 Grading Rubric
 
-### Task 1: Dataset Design
-**Grading Scale:** 2 points per pair (Total: 10 points).
-- Correct logic for Prompt $\rightarrow$ Target.
-- Plausible distractor tokens.
+### Multiple Choice Questions
+- **Q1:** B (Encoder-only) - 5 Marks
+- **Q2:** B (Prevent look-ahead) - 5 Marks
+- **Q4:** B (Prevent saturation) - 5 Marks
+- **Q7:** B (CLM) - 5 Marks
+- **Q8:** B (Optimizer states) - 5 Marks
 
-### Task 2: "Mask-Off" Analysis
-**Grading Scale:** 5 points per answer (Total: 15 points).
+### Short Answer / True-False
+- **Q3:** $O(N^2)$ time and space. (5 Marks)
+- **Q5:** False. Only top-k experts are activated. (5 Marks)
+- **Q6:** Router is a gating network. If poorly trained, it leads to expert collapse (all tokens go to one expert). (10 Marks)
 
-1. **Training Performance:** Loss drops significantly faster. The model simply "looks ahead" to the answer in the training set.
-2. **Inference Failure:** Total failure. The model never learned to predict based on a prefix; it learned to copy from the future. In inference, there is no future.
-3. **Cheating vs. Predicting:** Predicting requires learning the underlying distribution; copying is just an identity function mapping.
+---
+
+## 3. Final Grade Calculation
+- **Test Score:** Sum of Section A, B, and C.
+- **Quiz Score:** Sum of Q1-Q8.
+- **Total Part 1 Grade:** $\frac{\text{Test Score} + \text{Quiz Score}}{150} \times 100$
