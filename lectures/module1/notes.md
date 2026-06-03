@@ -1,125 +1,116 @@
-# Lecture Notes: Module 1 - Foundations of the Modern LLM
+# Module 1, Part 1: Foundations of the Modern LLM - Lecture Notes
 
-## Overview
-This module establishes the theoretical and mechanical foundations of Large Language Models (LLMs). We move from the basic concept of how a machine "reads" text to the complex architectures that enable modern AI.
+## Introduction
+Welcome to the first module of CS601. To build, adapt, and deploy Large Language Models (LLMs), we must first understand the architecture that made them possible: the **Transformer**. 
 
----
+Before we dive in, it is important to understand that an LLM is essentially a massive mathematical function. It takes text as input, converts it into numbers, performs billions of calculations, and outputs a probability distribution over possible next words.
 
-## Prerequisites Refresher
-*Assume audience knows Basic CS, but may need reminders on:*
-- **Linear Algebra:** Vectors, Matrices, and Matrix Multiplication (The core of all Transformer operations).
-- **Calculus:** Derivatives and Gradient Descent (How models learn by minimizing error).
-- **Probability:** Softmax functions and probability distributions (How models choose the next word).
+### Prerequisites Refresher
+For those who may be rusty:
+- **Neural Network:** A system of interconnected "neurons" (mathematical layers) that learn patterns in data.
+- **Linear Algebra:** LLMs operate almost entirely on **Tensors** (multi-dimensional arrays). Most operations are matrix multiplications.
+- **Probability:** The model doesn't "know" the answer; it calculates the most likely next token based on the patterns it saw during training.
 
 ---
 
 ## Chapter 1: Transformer Architectures
 
-### 1.1 Introduction to the Transformer
-The Transformer, introduced in "Attention is All You Need" (2017), replaced Recurrent Neural Networks (RNNs) by allowing the model to process all tokens in a sequence simultaneously (parallelization) rather than one by one.
+The "Transformer" is not a single model, but a design pattern. There are three primary "flavors" based on which parts of the original Transformer architecture (Vaswani et al., 2017) are used.
 
-### 1.2 Encoder-only Models (e.g., BERT)
-**Concept:** These models "read" the entire sequence and produce a rich representation of each token based on its context (both left and right).
-- **Mechanism:** Bi-directional attention.
-- **Use Case:** Natural Language Understanding (NLU) tasks like sentiment analysis, named entity recognition, and classification.
-- **Key Example:** BERT (Bidirectional Encoder Representations from Transformers).
+### 1.1 Encoder-only Models (e.g., BERT)
+**The "Reader"**
+Encoder-only models are designed to "understand" the relationship between all words in a sequence simultaneously.
 
-### 1.3 Decoder-only Models (e.g., GPT)
-**Concept:** These models are designed for generation. They read the sequence and predict the *next* token.
-- **Mechanism:** Causal (masked) attention. A token can only "attend" to tokens that came before it.
-- **Use Case:** Natural Language Generation (NLG), chat assistants, story writing.
-- **Key Example:** GPT-4, Llama-3, Mistral.
+- **Bidirectional Processing:** Unlike humans who read left-to-right, BERT looks at the entire sentence at once. This allows it to understand that in the phrase "bank of the river," the word "bank" refers to land, not a financial institution.
+- **Training Objective: Masked Language Modeling (MLM):** The model is trained by hiding random words (masking) and forcing the model to predict them using the surrounding context.
+- **Best Use Cases:** Sentiment analysis, Named Entity Recognition (NER), and extractive question answering.
 
-### 1.4 Encoder-Decoder Models (e.g., T5)
-**Concept:** A hybrid approach where an encoder processes the input and a decoder generates the output.
-- **Mechanism:** The encoder provides a context vector that the decoder uses to generate a sequence.
-- **Use Case:** Translation (English $\rightarrow$ French), Summarization.
-- **Key Example:** T5 (Text-to-Text Transfer Transformer).
+### 1.2 Decoder-only Models (e.g., GPT)
+**The "Writer"**
+Decoder-only models are designed for generation. They are **Autoregressive**, meaning they generate one token at a time and feed that token back into the input for the next step.
 
-### 1.5 Comparative Analysis
-| Feature | Encoder-only | Decoder-only | Encoder-Decoder |
-| :--- | :--- | :--- | :--- |
-| **Attention** | Bi-directional | Causal (Masked) | Bi-directional $\rightarrow$ Causal |
-| **Primary Goal** | Understanding | Generation | Transformation |
-| **Input/Output** | Sequence $\rightarrow$ Embeddings | Sequence $\rightarrow$ Next Token | Sequence $\rightarrow$ Sequence |
+- **Causal Language Modeling:** These models are strictly unidirectional. They can only "see" the past. To prevent the model from "cheating" during training by looking at the answer, we use **Causal Masking**.
+- **The Next-Token Game:** The sole goal is to predict the next token: $P(x_{t+1} | x_1, \dots, x_t)$.
+- **Best Use Cases:** Chatbots, creative writing, and code generation.
+
+### 1.3 Encoder-Decoder Models (e.g., T5)
+**The "Translator"**
+These models combine both architectures. An Encoder processes the source text into a "meaning vector" (latent space), and a Decoder uses that vector to generate a target sequence.
+
+- **Cross-Attention:** The Decoder doesn't just look at what it has already written; it uses "cross-attention" to look back at the Encoder's output to ensure the generation is grounded in the original input.
+- **Text-to-Text Framework:** T5 treats every problem (summarization, translation, classification) as a string-to-string mapping.
+- **Best Use Cases:** Machine translation, abstractive summarization, and paraphrasing.
 
 ---
 
 ## Chapter 2: Attention Mechanisms
 
-### 2.1 The Mechanics of Self-Attention
-Self-attention allows a model to weigh the importance of different words in a sentence regardless of their distance.
+Attention is the "secret sauce" of the Transformer. It allows the model to focus on the most relevant parts of the input regardless of their distance.
 
-**The QKV Framework:**
-For every token, the model generates three vectors via learned linear projections:
+### 2.1 Self-Attention (The Core)
+In a sentence, not all words are equally important. In "The cat sat on the mat because it was tired," the word "it" refers to "cat." Self-attention is the mechanism that allows the model to mathematically link "it" to "cat."
+
+**The QKV Mechanism:**
+To calculate attention, the model creates three vectors for every token:
 1. **Query (Q):** "What am I looking for?"
-2. **Key (K):** "What information do I contain?"
-3. **Value (V):** "What is the actual content I provide?"
+2. **Key (K):** "What do I contain?"
+3. **Value (V):** "What information do I provide if I am relevant?"
 
-**The Process:**
-1. **Score:** Compute the dot product of $Q$ and $K^T$. This determines how much the current token relates to others.
-2. **Scale:** Divide by $\sqrt{d_k}$ to prevent gradients from becoming too small.
-3. **Softmax:** Convert scores into probabilities (summing to 1).
-4. **Weight:** Multiply the Softmax result by $V$ to get the final weighted representation.
-
-**Formula:** $\text{Attention}(Q, K, V) = \text{softmax}\left(\frac{QK^T}{\sqrt{d_k}}\right)V$
+The attention score is calculated as:
+$$\text{Attention}(Q, K, V) = \text{softmax}\left(\frac{QK^T}{\sqrt{d_k}}\right)V$$
 
 ### 2.2 Multi-Head Attention (MHA)
-Instead of one attention pass, the model performs several in parallel ("heads"). Each head can attend to different aspects of the text (e.g., one head focuses on grammar, another on entity relationships).
-- **Process:** Run $N$ attention heads $\rightarrow$ Concatenate results $\rightarrow$ Linear projection back to original dimension.
+One attention head might focus on grammar, another on entity relationships, and another on sentiment. **Multi-Head Attention** runs several attention processes in parallel, allowing the model to capture multiple dimensions of the text.
 
-### 2.3 FlashAttention and Computational Efficiency
-Standard attention has $O(n^2)$ complexity relative to sequence length $n$. This makes long documents extremely expensive.
-- **FlashAttention:** An IO-aware algorithm that optimizes memory access. It avoids writing the large $n \times n$ attention matrix to the slow GPU HBM (High Bandwidth Memory) and instead computes it in blocks within the fast SRAM.
-- **Impact:** Significant speed-up and the ability to handle much longer context windows.
-
-### 2.4 Attention Bottlenecks
-- **Memory Wall:** The KV Cache (Key-Value cache) grows linearly with sequence length, consuming massive VRAM.
-- **Compute Wall:** The quadratic cost of attention calculations.
+### 2.3 FlashAttention
+Standard attention has a computational complexity of $O(n^2)$, meaning if you double the sequence length, the compute cost quadruples. **FlashAttention** optimizes this by using "tiling" to reduce the number of times data is moved between slow High-Bandwidth Memory (HBM) and fast SRAM on the GPU. This is what allows modern LLMs to have massive context windows (e.g., 128k+ tokens).
 
 ---
 
 ## Chapter 3: Scaling Laws & Mixture of Experts (MoE)
 
-### 3.1 Understanding Scaling Laws
-Research (e.g., Kaplan et al.) shows that model performance follows a power-law relationship with three variables:
-1. **Compute (C):** Total FLOPs used.
-2. **Dataset Size (D):** Number of tokens trained on.
-3. **Parameters (N):** Size of the model.
-- **Insight:** To improve performance, you must scale all three in tandem. Increasing only parameters without increasing data leads to diminishing returns.
+### 3.1 Scaling Laws
+Research (Kaplan et al., 2020) showed that model performance follows a predictable power law relative to three factors:
+1. **Parameter Count (N):** The number of weights in the model.
+2. **Dataset Size (D):** The number of tokens trained on.
+3. **Compute (C):** The total FLOPs used for training.
 
-### 3.2 Sparse Activation and Routing (MoE)
-Dense models activate every parameter for every token. MoE introduces "Sparsity."
-- **Mechanism:** Instead of one large Feed-Forward Network (FFN), the model has multiple "experts" (small FFNs).
-- **Router:** A learned gating network that decides which 1 or 2 experts should handle a specific token.
-- **Benefit:** You can have a model with 1 Trillion parameters, but only activate 10 Billion per token, keeping inference costs low while maintaining high capacity.
+As you increase these, the "loss" (error) decreases predictably. This led to the "bigger is better" era of LLMs.
 
-### 3.3 Case Study: Mixtral Architecture
-Mixtral is a prime example of a Sparse MoE. It uses a "Router" to send tokens to a subset of experts, allowing it to outperform larger dense models while remaining faster.
+### 3.2 Mixture of Experts (MoE)
+As models grew, they became too expensive to run. **MoE** solves this by introducing **Sparsity**.
+
+Instead of every token passing through every parameter, an MoE model has several "expert" sub-networks. A **Router** determines which expert is best suited for the current token.
+- **Dense Model:** Every token $\to$ All parameters.
+- **Sparse Model (MoE):** Every token $\to$ Router $\to$ Top-k Experts.
+
+**Example: Mixtral**
+Mixtral uses a MoE architecture where only a fraction of its total parameters are active for any given token, providing the performance of a massive model with the inference speed of a smaller one.
 
 ---
 
 ## Chapter 4: Base Model Training
 
 ### 4.1 The Objective: Next-Token Prediction
-Base models are trained via **Causal Language Modeling (CLM)**.
-- **The Goal:** Given a sequence of tokens $t_1, t_2, ..., t_n$, predict $t_{n+1}$.
-- **Loss Function:** Cross-Entropy Loss. The model compares its predicted probability distribution against the actual next token in the training set.
+Base models are trained using **Self-Supervised Learning**. They don't need labeled data (like "Positive/Negative"); they use the internet itself as the label. The task is simple: *Given this text, predict the next word.*
 
-### 4.2 Data Requirements for Pre-training
-- **Volume:** Trillions of tokens (Common Crawl, Wikipedia, GitHub, Books).
-- **Diversity:** High-quality code, mathematical reasoning, and natural language.
-- **Cleaning:** Removing duplicates, boilerplate, and low-quality "web-junk."
+This objective is powerful because to predict the next word in a medical paper, the model must implicitly learn medicine. To predict the next word in a Python file, it must learn logic and syntax.
 
-### 4.3 Compute Costs and Training Infrastructure
-Pre-training is the most expensive phase.
-- **Hardware:** Thousands of GPUs (H100s/A100s) connected via NVLink.
-- **Costs:** Millions of dollars in electricity and hardware.
-- **Parallelism:**
-    - **Data Parallelism:** Different GPUs process different batches of data.
-    - **Model Parallelism:** The model is split across GPUs because it's too large for one.
+### 4.2 Pre-training Costs
+Pre-training is the most expensive part of the LLM lifecycle.
+- **Compute Cost:** Thousands of GPUs (H100s) running for months.
+- **Memory Bottlenecks:** The primary limit is VRAM. Model weights, gradients, and optimizer states must all fit in GPU memory.
+- **Energy:** Massive electrical requirements for data center cooling and power.
 
-### 4.4 Evaluation of Base Models
-Base models are not "chatbots"; they are "document completers."
-- **Perplexity:** A measure of how well the model predicts the sample. Lower perplexity = better model.
-- **Benchmarks:** MMLU (Massive Multitask Language Understanding), HumanEval (for code).
+This is why "Base Models" (Llama, Mistral) are released for the community—so that individual researchers don't have to spend millions of dollars on the initial pre-training phase.
+
+### 4.3 Summary Table: The Big Picture
+
+| Concept | Role | Key Takeaway |
+| :--- | :--- | :--- |
+| **Transformer** | Architecture | Parallel processing of sequences via Attention. |
+| **Encoder** | Understanding | Bidirectional, good for NLU (e.g., BERT). |
+| **Decoder** | Generation | Causal, good for NLG (e.g., GPT). |
+| **Attention** | Weighting | QKV mechanism to find relevance. |
+| **MoE** | Efficiency | Sparse activation using a Router. |
+| **Next-Token** | Objective | Self-supervised learning from raw text. |

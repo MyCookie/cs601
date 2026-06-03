@@ -1,183 +1,243 @@
-# Lecture Slides: Module 1 - Foundations of the Modern LLM
+# Module 1, Part 1: Foundations of the Modern LLM - Lecture Slides
 
 ---
 
-## Slide 1: Welcome to CS601
-**Title: Foundations of the Modern LLM**
+## Slide 1: Title Slide
+**Content:**
+# Foundations of the Modern LLM
+## Module 1, Part 1: The Transformer & Base Model Training
+**CS601: Advanced LLM Engineering**
 
-- **Objective:** Understand the "engine" inside an LLM.
-- **What we are covering today:**
-    - How Transformers work.
-    - Why "Attention" is the secret sauce.
-    - How we scale models to trillions of parameters (MoE).
-    - How a base model is trained from scratch.
-
-**[Diagram Suggestion: A high-level evolution timeline showing RNN $\rightarrow$ Transformer $\rightarrow$ GPT $\rightarrow$ MoE]**
+**Speaker Notes:**
+Welcome everyone to CS601. Today we are starting from the absolute beginning. Whether you've used ChatGPT for a year or have never touched an AI, today is about understanding the "engine" that makes these tools work. We're moving from "prompting" to "engineering."
 
 ---
 
-## Slide 2: Prerequisites Refresher
-**Title: The Tools We'll Use**
+## Slide 2: The Big Picture
+**Content:**
+- **What is an LLM?**
+    - A massive mathematical function.
+    - Input: Text $\to$ Output: Probability distribution of the next token.
+- **The Secret Sauce: The Transformer**
+    - A specific neural network architecture designed for sequences.
+- **Core Goal today:**
+    - Understand the three "flavors" of Transformers.
+    - Learn how "Attention" works.
+    - Explore Scaling and Training.
 
-- **Linear Algebra:** We treat words as vectors (lists of numbers).
-- **Matrix Multiplication:** How the model "combines" information.
-- **Softmax:** Turning raw scores into probabilities.
-- **Gradient Descent:** The process of adjusting weights to reduce error.
-
-**[Summary Box: "Think of a Vector as a coordinate in a high-dimensional space where similar words are placed close together."]**
-
----
-
-## Slide 3: The Transformer Revolution
-**Title: Why Transformers?**
-
-- **Before:** RNNs processed text linearly (one word at a time).
-- **The Problem:** "Forgetting" the beginning of a long sentence; slow training.
-- **The Solution:** The Transformer (2017) processes the *entire* sequence at once.
-- **Result:** Massive parallelization $\rightarrow$ Faster training $\rightarrow$ Larger models.
+**Speaker Notes:**
+Before we get into the weeds, think of an LLM not as a "brain," but as a sophisticated pattern matcher. It doesn't "know" things in the human sense; it calculates the most likely next piece of text based on billions of examples it has seen.
 
 ---
 
-## Slide 4: Architecture 1 - Encoder-only
-**Title: Understanding (The BERT Style)**
+## Slide 3: Prerequisites Refresher
+**Content:**
+- **Neural Network:** Layers of math that learn patterns.
+- **Tensors:** Multi-dimensional arrays (the "language" of LLMs).
+- **Tokens:** Chunks of text (words or sub-words).
+- **Probability:** Predicting the most likely outcome.
 
-- **Goal:** Natural Language Understanding (NLU).
-- **Key Feature:** Bi-directional context.
-- **How it works:** Reads the whole sentence. Each token "sees" everything to its left and right.
-- **Best for:** Sentiment analysis, classification.
+**Visual Aid:** 
+A simple image showing a string of text being broken into tokens $\to$ converted into a vector (list of numbers) $\to$ passing through a layer of weights.
 
-**[Diagram Suggestion: A sentence where arrows point both ways between all words]**
-
----
-
-## Slide 5: Architecture 2 - Decoder-only
-**Title: Generating (The GPT Style)**
-
-- **Goal:** Natural Language Generation (NLG).
-- **Key Feature:** Causal (Masked) Attention.
-- **How it works:** Reads the sequence and predicts the *next* token.
-- **Constraint:** Tokens can only "see" what came before them.
-- **Best for:** Chatbots, storytelling, code completion.
-
-**[Diagram Suggestion: A sentence where arrows only point from left to right]**
+**Speaker Notes:**
+If you're rusty on the math, don't panic. Just remember that everything in an LLM is eventually converted into numbers (Tensors). We don't process letters; we process vectors.
 
 ---
 
-## Slide 6: Architecture 3 - Encoder-Decoder
-**Title: Transforming (The T5 Style)**
+## Slide 4: Chapter 1: Transformer Architectures
+**Content:**
+# Chapter 1: The Three Flavors
+One architecture, three primary uses:
+1. **Encoder-only** (The Reader) $\to$ BERT
+2. **Decoder-only** (The Writer) $\to$ GPT
+3. **Encoder-Decoder** (The Translator) $\to$ T5
 
-- **Goal:** Sequence-to-Sequence transformation.
-- **How it works:**
-    1. **Encoder:** Understands the input (Bi-directional).
-    2. **Decoder:** Generates the output (Causal).
-- **Best for:** Translation (Eng $\rightarrow$ Spa), Summarization.
-
-**[Diagram Suggestion: Two separate blocks (Encoder and Decoder) connected by a "Context Vector" arrow]**
-
----
-
-## Slide 7: The Magic of Attention
-**Title: What is Self-Attention?**
-
-- **Concept:** Not all words are equally important.
-- **Example:** "The animal didn't cross the street because **it** was too tired."
-- **Question:** What does "**it**" refer to?
-- **Attention's Job:** Weigh the connection between "it" and "animal" more heavily than "it" and "street".
+**Speaker Notes:**
+The original Transformer paper introduced both an Encoder and a Decoder. Over time, researchers realized you could use just one part depending on what you wanted the model to do.
 
 ---
 
-## Slide 8: The QKV Framework
-**Title: Query, Key, and Value**
+## Slide 5: Encoder-only (The Reader)
+**Content:**
+- **Example:** BERT
+- **Key Feature:** Bidirectional Attention.
+- **How it works:** Looks at the whole sentence at once.
+- **Objective:** Masked Language Modeling (MLM).
+    - `The [MASK] sat on the mat.` $\to$ `cat`
+- **Best for:** Sentiment Analysis, NER, Classification.
 
+**Visual Aid:**
+```mermaid
+graph LR
+    A[Input Text] --> B[Bidirectional Attention]
+    B --> C[Contextual Understanding]
+    C --> D[Classification Output]
+```
+
+**Speaker Notes:**
+BERT is like a researcher. It doesn't write stories; it analyzes text. Because it can look at words to the left AND right of a token, it understands context perfectly.
+
+---
+
+## Slide 6: Decoder-only (The Writer)
+**Content:**
+- **Example:** GPT (Generative Pre-trained Transformer)
+- **Key Feature:** Causal/Unidirectional Attention.
+- **The Rule:** Can only see the past, never the future.
+- **Objective:** Next-Token Prediction.
+- **Best for:** Chatbots, Storytelling, Coding.
+
+**Visual Aid:**
+A diagram showing a sequence of tokens where Token 3 has arrows pointing back to Token 1 and 2, but Token 1 has NO arrows pointing forward.
+
+**Speaker Notes:**
+GPT is the engine behind the chatbots we use. It's "Causal," meaning it's strictly a forward-moving process. It's essentially playing a game of "guess the next word" over and over again.
+
+---
+
+## Slide 7: Encoder-Decoder (The Translator)
+**Content:**
+- **Example:** T5 (Text-to-Text Transfer Transformer)
+- **Mechanism:** The "Bridge."
+    - **Encoder:** Understands source text.
+    - **Decoder:** Generates target text.
+- **Key Feature:** Cross-Attention.
+- **Best for:** Translation, Summarization.
+
+**Visual Aid:**
+```mermaid
+graph LR
+    A[English Text] --> B[Encoder]
+    B --> C{Context Vector}
+    C --> D[Decoder]
+    D --> E[French Text]
+```
+
+**Speaker Notes:**
+T5 treats every task as a "text-to-text" problem. It separates the "understanding" phase from the "generation" phase. This is the gold standard for translation.
+
+---
+
+## Slide 8: Chapter 2: Attention Mechanisms
+**Content:**
+# Chapter 2: The "Secret Sauce"
+**What is Attention?**
+The ability to focus on the most relevant parts of the input, regardless of distance.
+
+**Example:**
+"The **cat** sat on the mat because **it** was tired."
+Attention links "**it**" $\to$ "**cat**".
+
+**Speaker Notes:**
+Attention solved the biggest problem in old AI: the "forgetting" problem. In long sentences, old models forgot the subject by the time they reached the end. Attention allows the model to "jump" back to any word that is relevant.
+
+---
+
+## Slide 9: The QKV Mechanism
+**Content:**
+How Attention is calculated:
 - **Query (Q):** "What am I looking for?"
-- **Key (K):** "What information do I have?"
-- **Value (V):** "The actual content."
+- **Key (K):** "What do I contain?"
+- **Value (V):** "What information do I provide?"
 
-**The Mathematical Dance:**
-1. $\text{Score} = Q \cdot K$ (How well do they match?)
-2. $\text{Probability} = \text{softmax}(\text{Score} / \sqrt{d_k})$
-3. $\text{Output} = \text{Probability} \cdot V$
+**The Math:**
+$$\text{Attention}(Q, K, V) = \text{softmax}\left(\frac{QK^T}{\sqrt{d_k}}\right)V$$
 
-**[Diagram Suggestion: A table showing Q, K, and V vectors for three different words, with a dot-product operation showing the matching score]**
-
----
-
-## Slide 9: Multi-Head Attention (MHA)
-**Title: Looking at the World in Different Ways**
-
-- **The Idea:** One "attention pass" isn't enough.
-- **Multi-Head:** The model runs several attention processes (Heads) in parallel.
-- **Example:** 
-    - Head 1: Focuses on Subject-Verb agreement.
-    - Head 2: Focuses on Entity relationships.
-    - Head 3: Focuses on Punctuation/Structure.
-- **Result:** A much richer understanding of the text.
+**Speaker Notes:**
+Think of this like a library. The Query is your search term. The Keys are the labels on the spines of the books. The Values are the actual information inside the books. The model finds the best match between Q and K to decide how much of V to use.
 
 ---
 
-## Slide 10: Efficiency & FlashAttention
-**Title: The Bottleneck: Quadratic Complexity**
+## Slide 10: Scaling Attention: MHA & FlashAttention
+**Content:**
+- **Multi-Head Attention (MHA):**
+    - Parallel attention processes.
+    - One head for grammar, one for entities, one for sentiment.
+- **FlashAttention:**
+    - Problem: Attention is $O(n^2)$ (Expensive!).
+    - Solution: Tiling data to reduce memory movement between HBM and SRAM.
+    - Result: Massive context windows (128k+ tokens).
 
-- **The Problem:** $O(n^2)$ complexity. If you double the sequence length, you quadruple the compute cost.
-- **FlashAttention:** 
-    - Optimizes memory access (IO-aware).
-    - Uses fast SRAM instead of slow HBM.
-- **Impact:** Longer context windows (e.g., 128k tokens) become feasible.
+**Speaker Notes:**
+Multi-head attention allows the model to "see" the text from different perspectives. FlashAttention is a hardware-level optimization. It doesn't change the math, but it makes the math run significantly faster on GPUs.
 
 ---
 
-## Slide 11: Scaling Laws
-**Title: How Big is Enough?**
+## Slide 11: Chapter 3: Scaling Laws & MoE
+**Content:**
+# Chapter 3: Efficiency & Scale
+**Scaling Laws:**
+Performance improves predictably as we increase:
+1. Parameter Count
+2. Dataset Size
+3. Compute (FLOPs)
 
-- **The Power Law:** Model performance increases predictably as we scale.
-- **The Three Pillars:**
-    1. **Compute:** More FLOPs.
-    2. **Data:** More tokens.
-    3. **Parameters:** Larger model.
-- **Key Lesson:** Scaling only one (e.g., parameters) without the others is a waste of compute.
+**The Problem:**
+Bigger models = slower and more expensive.
 
-**[Diagram Suggestion: A graph showing the logarithmic relationship between Model Size and Loss]**
+**Speaker Notes:**
+For a while, the industry just made models bigger. But we hit a wall: inference cost. We needed a way to get the power of a huge model without paying the "tax" of running every single parameter for every word.
 
 ---
 
 ## Slide 12: Mixture of Experts (MoE)
-**Title: Smarter, Not Harder**
+**Content:**
+**The Solution: Sparsity**
+- **Dense Model:** All parameters activate for every token.
+- **Sparse Model (MoE):** Only a few "Expert" networks activate.
+- **The Router:** Decides which expert is best for the token.
 
-- **Dense Models:** Every token activates every parameter. (Expensive!)
-- **MoE Models:** Only a few "experts" (sub-networks) are activated per token.
-- **The Router:** A gatekeeper that sends the token to the best expert.
-- **Benefit:** High capacity (trillions of parameters) with low inference cost.
+**Example: Mixtral**
+- Huge total parameter count, but small "active" parameter count.
 
-**[Diagram Suggestion: A "Router" block sending tokens to one of eight "Expert" blocks]**
+**Visual Aid:**
+A diagram showing an input token $\to$ a Router $\to$ only 2 out of 8 Experts lighting up.
 
----
-
-## Slide 13: Base Model Training
-**Title: Next-Token Prediction**
-
-- **The Task:** "The cat sat on the ___" $\rightarrow$ "mat".
-- **The Objective:** Minimize Cross-Entropy Loss.
-- **Training Data:** The "Internet" (Common Crawl, GitHub, Books).
-- **The Goal:** To learn the statistical structure of human language.
+**Speaker Notes:**
+MoE is like having a team of specialists. Instead of asking a generalist to do everything, the Router sends the "coding" token to the coding expert and the "legal" token to the legal expert. This is how we get GPT-4 level performance with higher efficiency.
 
 ---
 
-## Slide 14: Pre-training Infrastructure
-**Title: The Cost of Intelligence**
+## Slide 13: Chapter 4: Base Model Training
+**Content:**
+# Chapter 4: Creating the Base
+**The Objective: Next-Token Prediction**
+- **Self-Supervised Learning:** No manual labels needed.
+- The internet is the label.
+- Task: "Given the sequence, what is the next token?"
 
-- **Hardware:** Thousands of GPUs (A100/H100).
-- **Communication:** NVLink (ultra-fast interconnects).
-- **Parallelism:**
-    - **Data Parallelism:** Same model, different data.
-    - **Model Parallelism:** Different parts of the model, same data.
+**The Result:**
+The model learns world knowledge, logic, and grammar implicitly.
+
+**Speaker Notes:**
+Base models are the "raw" versions of LLMs. They aren't trained to be helpful assistants yet; they are just trained to be "completion machines." If you ask a base model "What is the capital of France?", it might respond with "What is the capital of Germany?" because it thinks it's looking at a quiz.
 
 ---
 
-## Slide 15: Evaluation
-**Title: Is the Model actually good?**
+## Slide 14: The Cost of Pre-training
+**Content:**
+- **Compute:** Thousands of H100 GPUs for months.
+- **Memory:** VRAM bottlenecks (Weights, Gradients, Optimizer states).
+- **Energy:** Massive power and cooling requirements.
+- **Why we use Base Models:**
+    - Most researchers can't afford $10M+ in compute.
+    - We start with Llama/Mistral and "Fine-tune" them.
 
-- **Perplexity:** How "surprised" is the model by the next token? (Lower is better).
-- **Benchmarks:**
-    - **MMLU:** General knowledge/reasoning.
-    - **HumanEval:** Python coding ability.
-- **Reminder:** A Base Model is a "completer," not a "chatbot." (SFT comes later!)
+**Speaker Notes:**
+Pre-training is the laziest part of the process for the human (just feed it data), but the most expensive for the wallet. This is why open-weights models are so important for the community.
+
+---
+
+## Slide 15: Summary & Wrap-up
+**Content:**
+- **Transformer:** The architecture (Encoder, Decoder, or both).
+- **Attention:** The mechanism (QKV, MHA, Flash).
+- **Scaling:** The a-ha moment (Scaling Laws $\to$ MoE).
+- **Training:** The foundation (Next-token prediction).
+
+**Next Lesson:** 
+Fine-tuning and RLHF: Turning a "Completion Machine" into a "Helpful Assistant."
+
+**Speaker Notes:**
+That's the foundation. We've gone from the high-level "flavors" to the low-level math of attention and the economics of training. Next time, we'll look at how to take these raw base models and make them actually useful for users.
