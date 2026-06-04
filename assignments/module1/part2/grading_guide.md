@@ -71,3 +71,31 @@ This guide provides the expected answers and grading criteria for the assignment
 - **Criteria:**
   - DP: Shows multiple GPUs, each with a full copy of the model.
   - MP: Shows multiple GPUs, each with a unique slice of the model.
+
+---
+
+## Test 1: Grading Criteria
+
+### Section 1: Scaling Laws (30 pts)
+- **Q1 (10 pts):** Full marks for explaining the balance between $N$ and $D$ and mentioning that larger models on small data lead to under-training.
+- **Q2 (10 pts):** Correct calculation of $D \approx 4.16 \times 10^{13}$ (5 pts). Correct identification that it is over-trained compared to Chinchilla's $4 \times 10^{10}$ (5 pts).
+- **Q3 (10 pts):** Correct labeling of axes (Log Compute, Log Loss) (5 pts). Correct description of power-law decay and diminishing returns (5 pts).
+
+### Section 2: MoE (35 pts)
+- **Q4 (10 pts):** Full marks for contrasting "Compute per Token" (constant in MoE) vs "Total Model Capacity" (higher in MoE).
+- **Q5 (15 pts):** Total Params: 6.5B (5 pts). Active Params: 500M (5 pts). Sparsity Ratio: $\approx 7.7\%$ (5 pts).
+- **Q6 (10 pts):** Correct explanation of Top-k selection (5 pts). Discussion of load balancing or expert bottlenecks (5 pts).
+
+### Section 3: Infrastructure (35 pts)
+- **Q7 (15 pts):** Weights: 20GB (5 pts). Gradients: 20GB (5 pts). Optimizer: 80GB (5 pts). Total: 120GB.
+- **Q8 (10 pts):** Correct identification of MP for large models (5 pts) and DP for throughput (5 pts).
+- **Q9 (10 pts):** Mention of activations/KV cache (5 pts). Correct explanation of Activation Checkpointing (trade compute for memory) (5 pts).
+
+---
+
+## Quiz 1: Grading Criteria
+
+- **Q1 (5 pts):** Correct answer: 140 Billion tokens.
+- **Q2 (5 pts):** Correct answer: 200 Million parameters.
+- **Q3 (5 pts):** Correct answer: 8 GB.
+- **Q4 (5 pts):** Correct answer: B) Model Parallelism.
