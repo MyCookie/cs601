@@ -20,7 +20,7 @@ The README.md contains a syllabus, and its textbook is outlined in textbook/READ
 You will write each section twice.
 The first version will be geared towards a first-time reader. Write from a first-person perspective as a knowledgeable peer. Assume that the reader knows nothing of the current subject. If you are referencing an obscure topic the reader may have forgotten, write a short summary in a quote. Be professional: do not write unnecessary sentences that don't convey knowledge or information. Make liberal use of diagrams and other visual aids to help communicate key details. Be verbose, describe each new bit of information and knowledge in detail. Reference prerequisites where appropriate.
 The second version will be dry, information-dense and highly technical. This version will lack any conversational tone. Present this version as a summary of the topic.
-Create Part I, Chapter 1, Section 1.
+Create Part I, Chapter 1.
 Commit the changes to git and push.
 
 ## Lecture slides:
