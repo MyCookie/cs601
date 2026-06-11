@@ -1,88 +1,62 @@
-# Answer Sheet: Module 1, Part 3
+# Answer Sheet: Module 1 Part 3
 
 ## Assignment 1: The Mechanics of Attention
 
-### Task 1: Manual Attention Trace
-1. **Compute Raw Scores ($QK^T$):**
-   $\begin{bmatrix} 1 & 0 \end{bmatrix} \begin{bmatrix} 1 & 1 \\ 0 & 1 \end{bmatrix}^T = \begin{bmatrix} 1 & 0 \end{bmatrix} \begin{bmatrix} 1 & 0 \\ 1 & 1 \end{bmatrix} = \begin{bmatrix} 1 & 0 \end{bmatrix}$
-   
-   *Wait, checking the matrix multiplication:*
-   $Q = [1, 0], K = [[1, 1], [0, 1]]$
-   $Q \times K_1 = (1*1) + (0*1) = 1$
-   $Q \times K_2 = (1*0) + (0*1) = 0$
-   Scores = $[1, 0]$
+### Task 1: Mathematical Formulation
+1. **Query (Q):** The vector representing the current token being processed.
+2. **Query-Key Product:** $QK^T$ represents the similarity score between the current token (Q) and all other tokens in the sequence (K).
+3. **Query-Key-Value Product:** $QK^T V$ represents the weighted sum of values (V) based on the same similarity scores.
+4. **Softmax Normalization:** $\text{Softmax}(\frac{QK^T}{\sqrt{d_k}})$ ensures that the attention weights sum to 1.0, turning them into a probability distribution over the tokens.
 
-2. **Scale the Scores:**
-   $\sqrt{d_k} = \sqrt{2} \approx 1.414$
-   Scaled Scores = $[1/1.414, 0/1.414] \approx [0.707, 0]$
+### Task 2: Visualizing Attention Weights
+- **Same Token:** The attention weight for the same token is typically the highest because the token is most relevant to itself.
+- **Semantic Meaning:** Tokens with similar semantic meaning (e.g., "bank" in a financial context and "investment" in a financial context) will have higher attention weights.
 
-3. **Apply Softmax:**
-   $\text{softmax}([0.707, 0]) = \frac{[e^{0.707}, e^0]}{e^{0.707} + e^0} = \frac{[2.028, 1]}{2.028 + 1} = \frac{[2.028, 1]}{3.028} \approx [0.67, 0.33]$
-
-4. **Compute Final Output:**
-   $\text{Output} = [0.67, 0.33] \begin{bmatrix} 10 & 20 \\ 30 & 40 \end{bmatrix} = [ (0.67*10 + 0.33*30), (0.67*20 + 0.33*40) ]$
-   $\text{Output} = [ (6.7 + 9.9), (13.4 + 13.2) ] = [16.6, 26.6]$
-
-**Final Result:** $\begin{bmatrix} 16.6 & 26.6 \end{bmatrix}$
+### Task 3: Causal Masking
+- **Concept:** Causal masking (or look-ahead masking) prevents the model from "seeing" tokens that come after the current token during training.
+- **Why:** This is essential for auto-regressive models (like GPT)- they must predict the next token based only on previous tokens.
 
 ---
 
-## Assignment 2: Architecture Comparison and Optimization
+## Assignment 2: Architecture Comparison
 
-### Task 1: The "Optimal Architecture" Matrix
-1. **High-Precision Sentiment Analysis:**
-    - **Architecture:** Encoder-only (e.g., BERT).
-    - **Justification:** Bi-directional attention allows the model to see the entire sentence simultaneously, which is crucial for detecting subtle nuances and dependencies between words regardless of their position.
-2. **Real-time Translation Engine:**
-    - **Architecture:** Encoder-Decoder (e.g., T5, BART).
-    - **Justification:** This architecture is designed for sequence-to-sequence mapping where the source (English) is fully encoded into a representation, and the target (French) is generated auto-regressively.
-3. **Causal Storytelling AI:**
-    - **Architecture:** Decoder-only (e.g., GPT series).
-    - **Justification:** Causal (masked) attention ensures that the prediction of the next token is based only on previous tokens, preventing "leakage" from the future and enabling generative storytelling.
+### Task 1: Architectural Mapping
+| Feature | Encoder-Only (BERT) | Decoder-Only (GPT) | Encoder-Decoder (T5) | Justification |
+| :--- | :---: | :---: | :---: | :---: |
+| **Bidirectional Attention** | [x] | [ ] | [ ] | Encoder-only models are designed for understanding, understanding. |
+| **Causal Masking** | [ ] | [x] | [x] | Decoders must be causal to generate text. |
+| **Cross-Attention** | [ ] | [ ] | [x] | Encoder-Decoder models use cross-attention to link the encoder's output to the decoder. |
+| **Auto-regressive Generation** | [ ] | [x] | [x] | Both Decoder-only and Encoder-Decoder models are generate text. |
+| **Masked LM Objective** | [x] | [ ] | [ ] | BERT uses Masked LM (MLM) to learn bidirectional representations. |
 
-### Task 2: FlashAttention Analysis
-1. **$O(N^2)$ Complexity:** Standard attention computes an $N \times N$ attention matrix. For $N=100\text{k}$, the matrix size is $10^{10}$ elements. If each element is 4 bytes (float32), this requires $\approx 40\text{GB}$ of VRAM just for one head in one layer. This "Memory Wall" occurs because VRAM capacity is much smaller than the total compute power of the GPU.
-2. **Tiling:** FlashAttention breaks the large attention matrix into small blocks (tiles) that fit into the GPU's on-chip SRAM. It computes the softmax in blocks and updates the running normalization factor, allowing it to avoid writing the full $N \times N$ matrix to HBM.
-3. **Re-computation:** In the backward pass, standard attention stores the $N \times N$ matrix from the forward pass. FlashAttention instead re-computes the necessary attention blocks on-the-fly from the $Q, K, V$ matrices in SRAM, trading off a small amount of extra compute to drastically reduce memory storage requirements.
-4. **IO-Aware:** It is "IO-Aware" because its primary goal is to minimize the data movement (reads/writes) between the slow High Bandwidth Memory (HBM) and the fast on-chip SRAM.
+### Task 2: Case Study - Task Selection
+1. **Sentiment Analysis:** Encoder-only. (e.g., BERT). Because it needs to understand the whole sequence bidirectional.
+2. **Creative Story Writing:** Decoder-only. (e.g., GPT). Because it is optimized for next-token prediction.
+3. **English-to-French Translation:** Encoder-Decoder. (e.g., T5). Because it needs to process an input sequence and generate a different output sequence.
 
----
-
-## Assignment 3: Scaling Laws and Compute-Optimal Training
-
-### Task 1: The Scaling Law Relationship
-1. **The Three Variables:** 
-    - **Model Size ($N$):** Increasing $N$ generally reduces loss, but with diminishing returns.
-    - **Dataset Size ($D$):** Increasing $D$ reduces loss, provided the model has enough capacity to learn the patterns.
-    - **Compute Budget ($C$):** The total FLOPs available for training.
-2. **Diminishing Returns:** As $N$ increases, the model becomes more expressive. However, if $D$ is constant, the model eventually reaches a limit of what can be learned from that specific dataset. It may start to overfit or simply stop improving as it has already captured all the patterns available in $D$.
-3. **The Power Law:** A larger $\alpha$ implies that the model is more "parameter-efficient" - meaning a more significant drop in loss is achieved for every doubling of parameters.
+### Task 3: Deep Dive - Cross-Attention
+1. **Q, K, V Sources:**
+    - **Self-Attention:** Q, K, and V all come from the decoder's own sequence.
+    - **Cross-Attention:** Q comes from the decoder, while K and V come from the encoder's output.
+2. **Effect of Removal:** If cross-attention were removed, the decoder would have no way to "look back" at the input sentence in the encoder, making translation impossible.
+3. **Handling Lengths:** Cross-attention allows the decoder to attend to any part of the encoder's sequence regardless of the length of the output sequence being generated.
 
 ---
 
-## Assignment 2: Chinchilla Optimality Calculation
+## Assignment 3: Scaling Laws and FlashAttention
 
-### Task 2: Chinchilla Optimality Calculation
-1. **Optimal $N$ and $D$:**
-   Given $C = 2 \times 10^{22}$ FLOPs and $C \approx 6ND$.
-   According to Chinchilla, $N$ and $D$ should scale equally.
-   $2 \times 10^{22} = 6 \times N \times D$
-   If $N = D/20$ (using the standard Chinchilla ratio for $N:D$ as $1:20$),
-   $2 \times 10^{22} = 6 \times (D/20) \times D = 0.3 \times D^2$
-   $D^2 = (2 \times 10^{22}) / 0.3 \approx 6.67 \times 10^{21}$
-   $D \approx \sqrt{6.67 \times 10^{21}} \approx 8.16 \times 10^{10}$ tokens.
-   $N = D/20 \approx 4.08 \times 10^9$ parameters.
-   
-   *Wait, recalculating using the $1:20$ ratio:*
-   $C = 6ND$. If $N=k D$, $C = 6kD^2$.
-   $2 \times 10^{22} = 6 \times (1/20) \times D^2 \Rightarrow 0.3 D^2 = 2 \times 10^{22} \Rightarrow D^2 = 6.67 \times 10^{22} \Rightarrow D = 8.16 \times 10^{11}$ tokens.
-   $N = 4.08 \times 10^{10}$ parameters.
+### Task 1: The Quadratic Bottleneck
+1. **Mathematical Reason:** The $QK^T$ operation produces an $N \times N$ matrix (where $N$ is the sequence length). For $N=100$, $100 \times 100 = 10,000$ elements. For $N=10,000$, $10,000 \times 10,000 = 100,000,000$ elements.
+2. **Memory Increase:** A $100\times$ increase in $N$ leads to a $100^2 = 10,000\times$ increase in the memory required for the attention matrix.
+3. **Memory Wall:** The "Memory Wall" refers to the a-priori knowledge of attention mechanisms. The GPU's memory bandwidth is much slower than its compute power (FLOPs). The bottleneck is moving data between HBM and SRAM, not the actual calculation.
 
-2. **Over-training vs. Under-training:**
-   If $N = 10 \times 10^9$ (10 billion), $D = C / (6N) = (2 \times 10^{22}) / (6 \times 10^{10}) \approx 3.33 \times 10^{11}$ tokens.
-   Compared to the optimal $N \approx 40$ billion and $D \approx 816$ billion, this model is **under-parameterized** (too small) and is therefore **over-trained** on its available compute budget.
-   Impact: The final model will have higher inference cost per token compared to a larger model trained on fewer tokens for the same loss, but it will be more efficient at inference time (smaller model = faster inference). However, it will not reach the minimum possible loss for that compute budget.
+### Task 2: FlashAttention and IO-Awareness
+1. **Tiling:** Tiling breaks the $N \times N$ matrix into small blocks (tiles) that fit into the fast SRAM. These tiles are computed and aggregated without ever writing the full $N \times N$ matrix back to the HBM.
+2. **SRAM vs. HBM:** HBM (High Bandwidth Memory) is large but slow. SRAM is very small but extremely fast. The cost of moving data between them is the high memory bandwidth overhead.
+3. **Recomputation:** During the backward pass, instead of storing the attention matrix from the forward pass, FlashAttention re-calculates it. This saves memory at the cost of a bit more compute.
+4. **Impact:** By eliminating the $O(N^2)$ memory bottleneck in HBM, FlashAttention allows models to handle sequence lengths (context windows) that are much larger (e.g., 128k tokens) without running out of VRAM.
 
-3. **Data Constraints:**
-   If $D = 1 \times 10^{12}$ (1 trillion tokens), $N = C / (6D) = (2 \times 10^{22}) / (6 \times 10^{12}) \approx 3.33 \times 10^9$ parameters.
-   This model is **not compute-optimal** in the Chinchilla sense because the model size $N$ was forced to be smaller than the optimal $N$ for that budget $C$, because we maximized $D$ based on available data. In this case, the model is "over-trained" on the data it has.
+### Task 3: Scaling Analysis
+1. **$N = 2,048 \rightarrow$** $2,048^2 \times 2$ bytes $\approx 8.39$ MB.
+2. **$N = 32,768 \rightarrow$** $32,768^2 \times 2$ bytes $\approx 2.15$ GB.
+3. **Conclusion:** For very long sequences (e.g., $N=100,000$), the attention matrix alone would require $100,000^2 \times 2$ bytes $\approx 20$ GB per head. With multiple heads and multiple layers, the total memory requirement would quickly exceed the VRAM of any current GPU.

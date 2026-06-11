@@ -1,40 +1,121 @@
-# Assignment 3: Scaling Laws and Compute-Optimal Training
+# Assignment 3: Scaling Laws and FlashAttention
 
-## Objective
-Understand the relationship between model size, dataset size, and training compute, and apply the principles of Chinchilla scaling to determine compute-optimal configurations.
-
----
-
-## Prerequisites
-Before starting this assignment, ensure you have:
-- Completed **Assignment 2: Architecture Comparison and Optimization**.
-- Read **Lecture Notes for Module 1, Part 3**, specifically the section on Scaling Laws.
+**Name:** ___________________________  
+**Date:** ____________________________
 
 ---
 
-## 1. Task 1: The Scaling Law Relationship
-Based on the scaling laws discussed in the course, answer the following:
-
-1. **The Three Variables:** Identify the three primary variables that govern the final test loss of a Transformer model. How does each variable independently affect performance?
-2. **Diminishing Returns:** Explain why increasing the number of parameters ($N$) without increasing the dataset size ($D$) eventually leads to diminishing returns in loss reduction.
-3. **The Power Law:** Scaling laws are typically described as power laws. If the loss follows $L(N, D) \propto N^{-\alpha}$, what does a larger $\alpha$ imply about the efficiency of adding parameters to the model?
+## Overview
+As models grow in size, the computational and memory requirements increase. This assignment explores the "Memory Wall," the quadratic complexity of attention, and how FlashAttention optimizes the process through IO-awareness.
 
 ---
 
-## 2. Task 2: Chinchilla Optimality Calculation
-You are given a fixed compute budget of $C = 2 \times 10^{22}$ FLOPs. 
+## Task 1: The Quadratic Bottleneck
 
-Assume the compute approximation $C \approx 6ND$ (where $N$ is the number of parameters and $D$ is the number of training tokens).
+The standard Attention mechanism has a computational and memory complexity of $O(N^2)$, where $N$ is the sequence length.
 
-1. **The Chinchilla Principle:** According to the Chinchilla study, for a compute-optimal model, the number of parameters $N$ and the number of tokens $D$ should scale equally. If $N \propto C^{0.5}$ and $D \propto C^{0.5}$, calculate the optimal $N$ and $D$ for your given budget $C$.
-2. **Over-training vs. Under-training:** 
-    - If you decided to use a model with $N = 10$ billion parameters for this budget, would you be over-training or under-training the model relative to the Chinchilla optimum?
-    - Explain the impact of this decision on the final model's inference cost versus its performance.
-3. **Data Constraints:** Suppose you only have access to 1 trillion high-quality tokens. If you still want to spend your entire compute budget $C$, how must you adjust your model size $N$? Will the resulting model be "compute-optimal" in the Chinchilla sense? Why or why not?
+**Question:**
+1. Explain mathematically why the complexity is $O(N^2)$. Which specific operations in the attention formula $\text{Softmax}(\frac{QK^T}{\sqrt{d_k}})V$ contribute to this?
+2. If you increase the sequence length from 1,024 tokens to 102,400 tokens (a $100\times$ increase), how much more memory is required for the attention matrix? 
+3. What is the "Memory Wall," and why does it become the primary bottleneck for Large Language Models (LLMs) rather than the raw floating-point operations (FLOPs) of the GPU?
+
+**Your Response:**
+\
+\
+\
+\
+\
+\
+\
+\
+\
+\
+\
+\
+\
+\
 
 ---
 
-## 3. Submission Guidelines
-- Show all calculations for Task 2 clearly.
-- For Task 1, provide concise but technically accurate explanations.
-- Use LaTeX formatting for all mathematical expressions.
+## Task 2: FlashAttention and IO-Awareness
+
+FlashAttention is described as an "IO-aware" algorithm. Instead of focusing on reducing the number of FLOPs, it focuses on reducing the number of memory reads/writes.
+
+**Questions:**
+1. **Tiling:** Describe the concept of "Tiling" in FlashAttention. How does it allow the algorithm to compute attention without writing the large $N \times N$ intermediate matrix back to High Bandwidth Memory (HBM)?
+2. **SRAM vs. HBM:** Compare the roles of HBM and SRAM in the context of FlashAttention. Why is moving data between them so expensive?
+3. **Recomputation:** FlashAttention avoids storing the large attention matrix for the backward pass by using "recomputation." Explain the trade-off being made here (Compute vs. Memory).
+4. **Impact:** In your own words, explain how FlashAttention enables the training of models with significantly longer context windows (e.g., 128k tokens) compared to standard attention.
+
+**Your Response:**
+\
+\
+\
+\
+\
+\
+\
+\
+\
+\
+\
+\
+\
+\
+\
+\
+\
+\
+\
+\
+\
+\
+\
+\
+\
+\
+\
+\
+\
+\
+\
+\
+\
+\
+\
+\
+\
+\
+\
+\
+\
+
+---
+
+## Task 3: Scaling Analysis
+
+Assume you have a GPU with 80GB of VRAM. You are using FP16 precision (2 bytes per parameter/activation).
+
+**Scenario:**
+You are calculating the memory required to store the attention matrix $A = \text{Softmax}(\frac{QK^T}{\sqrt{d_k}})$ for a single head.
+
+1. For $N = 2,048$, how many megabytes (MB) does the attention matrix occupy?
+2. For $N = 32,768$, how many gigabytes (GB) does the attention matrix occupy?
+3. Based on your answer to #2, why is the standard attention implementation impossible for very long sequences even on high-end GPUs?
+
+**Your Calculations:**
+\
+\
+\
+\
+\
+\
+\
+\
+\
+\
+\
+\
+\
+\
+\
