@@ -2,21 +2,52 @@
 # Licensed under Apache 2.0
 # Run all tasks in a phase concurrently via background jobs.
 #
-# Usage:  ./run_phase.sh <PHASE> [MAX_PARALLEL]
+# Usage:  ./run_phase.sh [-j NUM] <PHASE> [MAX_PARALLEL]
 #
-# Phases: textbook | appendix | lecture | labs | assessment | infrastructure | all
-# MAX_PARALLEL defaults to 5.
+#   -j NUM, --jobs NUM   Maximum concurrent Claude Code invocations (1-5, default: 5)
+#   PHASE                textbook | appendix | lecture | labs | assessment | infrastructure | all
+#   MAX_PARALLEL         Deprecated — use -j / --jobs instead (still accepted)
 
 set -euo pipefail
 
 SCRIPT_DIR="$(cd "$(dirname "$0")" && pwd)"
 source "${SCRIPT_DIR}/config.sh"
 
+# ---------------------------------------------------------------------------
+# Parse flags
+# ---------------------------------------------------------------------------
+MAX_PAR="${MAX_JOBS}"
+
+while [[ $# -gt 0 ]]; do
+  case "$1" in
+    -j|--jobs)
+      if [[ -z "${2:-}" ]] || [[ "$2" == -* ]]; then
+        err "--jobs requires a numeric argument (1-5)"
+        exit 2
+      fi
+      validate_jobs "$2" || exit 2
+      MAX_PAR="$2"; shift 2
+      ;;
+    -*)
+      err "Unknown option: $1"
+      exit 2
+      ;;
+    *)
+      break
+      ;;
+  esac
+done
+
 PHASE="${1:-}"
-MAX_PAR="${2:-5}"
+# Backward compat: second positional arg overrides if provided
+if [[ -n "${2:-}" ]] && [[ "$2" =~ ^[0-9]+$ ]]; then
+  validate_jobs "$2" || exit 2
+  MAX_PAR="$2"
+  warn "Positional MAX_PARALLEL is deprecated — use --jobs instead"
+fi
 
 if [ -z "${PHASE}" ]; then
-  err "Usage: $0 <PHASE> [MAX_PARALLEL]"
+  err "Usage: $0 [-j NUM] <PHASE>"
   echo "  Phases: textbook appendix lecture labs assessment infrastructure all"
   exit 2
 fi

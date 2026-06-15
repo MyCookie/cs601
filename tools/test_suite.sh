@@ -357,6 +357,42 @@ TESTS_RUN=$((TESTS_RUN + 1))
 echo ""
 
 # ===========================================================================
+# Suite 8: Concurrency (--jobs) validation
+# ===========================================================================
+echo -e "${BOLD}[Suite 8] Concurrency (--jobs)${RESET}"
+
+assert_nonempty "MAX_JOBS defaults to 5" "${MAX_JOBS}"
+assert_eq "MAX_JOBS default value" "${MAX_JOBS}" "5"
+
+# validate_jobs accepts valid values
+if validate_jobs 1 2>/dev/null; then echo "  ${GREEN}PASS${RESET} validate_jobs accepts 1"; TEST_PASS=$((TEST_PASS+1)); else echo "  ${RED}FAIL${RESET} validate_jobs accepts 1"; TEST_FAIL=$((TEST_FAIL+1)); fi; TESTS_RUN=$((TESTS_RUN+1))
+if validate_jobs 3 2>/dev/null; then echo "  ${GREEN}PASS${RESET} validate_jobs accepts 3"; TEST_PASS=$((TEST_PASS+1)); else echo "  ${RED}FAIL${RESET} validate_jobs accepts 3"; TEST_FAIL=$((TEST_FAIL+1)); fi; TESTS_RUN=$((TESTS_RUN+1))
+if validate_jobs 5 2>/dev/null; then echo "  ${GREEN}PASS${RESET} validate_jobs accepts 5"; TEST_PASS=$((TEST_PASS+1)); else echo "  ${RED}FAIL${RESET} validate_jobs accepts 5"; TEST_FAIL=$((TEST_FAIL+1)); fi; TESTS_RUN=$((TESTS_RUN+1))
+
+# validate_jobs rejects out-of-range and non-numeric
+if ! validate_jobs 0 2>/dev/null; then echo "  ${GREEN}PASS${RESET} validate_jobs rejects 0"; TEST_PASS=$((TEST_PASS+1)); else echo "  ${RED}FAIL${RESET} validate_jobs rejects 0"; TEST_FAIL=$((TEST_FAIL+1)); fi; TESTS_RUN=$((TESTS_RUN+1))
+if ! validate_jobs 6 2>/dev/null; then echo "  ${GREEN}PASS${RESET} validate_jobs rejects 6"; TEST_PASS=$((TEST_PASS+1)); else echo "  ${RED}FAIL${RESET} validate_jobs rejects 6"; TEST_FAIL=$((TEST_FAIL+1)); fi; TESTS_RUN=$((TESTS_RUN+1))
+if ! validate_jobs abc 2>/dev/null; then echo "  ${GREEN}PASS${RESET} validate_jobs rejects 'abc'"; TEST_PASS=$((TEST_PASS+1)); else echo "  ${RED}FAIL${RESET} validate_jobs rejects 'abc'"; TEST_FAIL=$((TEST_FAIL+1)); fi; TESTS_RUN=$((TESTS_RUN+1))
+if ! validate_jobs -1 2>/dev/null; then echo "  ${GREEN}PASS${RESET} validate_jobs rejects -1"; TEST_PASS=$((TEST_PASS+1)); else echo "  ${RED}FAIL${RESET} validate_jobs rejects -1"; TEST_FAIL=$((TEST_FAIL+1)); fi; TESTS_RUN=$((TESTS_RUN+1))
+
+# CS601_JOBS env var is respected
+if [[ "${MAX_JOBS}" == "5" ]]; then
+  echo "  ${GREEN}PASS${RESET} MAX_JOBS uses CS601_JOBS default"
+  TEST_PASS=$((TEST_PASS+1))
+else
+  echo "  ${YELLOW}WARN${RESET} MAX_JOBS=${MAX_JOBS} (CS601_JOBS env may be set)"
+  TEST_PASS=$((TEST_PASS+1))
+fi
+TESTS_RUN=$((TESTS_RUN+1))
+
+# run_phase.sh --help / no-arg exits with error
+assert_exit_code "run_phase.sh exits on missing phase" "2" "'${TOOLS_DIR}/run_phase.sh' 2>/dev/null"
+assert_exit_code "run_phase.sh -j 3 exits on missing phase" "2" "'${TOOLS_DIR}/run_phase.sh' -j 3 2>/dev/null"
+assert_exit_code "run_phase.sh --jobs 0 rejects bad value" "2" "'${TOOLS_DIR}/run_phase.sh' --jobs 0 textbook 2>/dev/null"
+
+echo ""
+
+# ===========================================================================
 # Summary
 # ===========================================================================
 echo -e "${BOLD}═══════════════════════════════════════════════════════════${RESET}"

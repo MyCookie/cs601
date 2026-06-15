@@ -24,6 +24,22 @@ CLAUDE_FLAGS=(
 )
 
 # ---------------------------------------------------------------------------
+# Concurrency
+# ---------------------------------------------------------------------------
+# Default max concurrent Claude Code invocations.
+# Override via CS601_JOBS env var or --jobs / -j flag on run_phase.sh.
+MAX_JOBS="${CS601_JOBS:-5}"
+
+validate_jobs() {
+  local n="$1"
+  # Must be an integer between 1 and 5
+  if ! [[ "$n" =~ ^[0-9]+$ ]] || (( n < 1 || n > 5 )); then
+    err "--jobs must be an integer between 1 and 5 (got: ${n})"
+    return 1
+  fi
+}
+
+# ---------------------------------------------------------------------------
 # Colours (disable when stdout is not a TTY)
 # ---------------------------------------------------------------------------
 if [ -t 1 ]; then

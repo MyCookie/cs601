@@ -14,8 +14,11 @@ cd tools && ./test_suite.sh
 # Run a single task
 ./run_task.sh T01
 
-# Run all 14 textbook chapters concurrently (max 5 at a time)
+# Run all 14 textbook chapters concurrently (up to 5 at a time)
 ./run_phase.sh textbook
+
+# Run with fewer concurrent jobs
+./run_phase.sh -j 2 textbook
 
 # See progress
 ./status.sh textbook
@@ -59,10 +62,16 @@ Full logs are written to `.task_logs/run_<TASK_ID>.log`.
 ### Run a Full Phase
 
 ```bash
-./run_phase.sh textbook 5
+./run_phase.sh textbook                  # default: up to 5 concurrent
+./run_phase.sh -j 3 textbook             # limit to 3 concurrent
+./run_phase.sh --jobs 1 textbook         # sequential (one at a time)
+./run_phase.sh textbook 5                # deprecated positional form (still works)
 ```
 
-Runs all tasks in the specified phase concurrently, limiting to 5 simultaneous Claude Code invocations. Phases:
+The `-j` / `--jobs` flag sets the maximum number of concurrent Claude Code invocations.
+Accepts an integer between **1** and **5**. Defaults to **5** (or the `CS601_JOBS` environment variable).
+
+Runs all tasks in the specified phase concurrently, limiting to the specified number of simultaneous Claude Code invocations. Phases:
 
 | Phase | Tasks | Count |
 |---|---|---|
@@ -126,11 +135,15 @@ Clears the status and removes log files so the task can be re-run.
 | Variable | Default | Description |
 |---|---|---|
 | `CLAUDE_BIN` | `claude` | Path to the Claude Code binary. |
+| `CS601_JOBS` | `5` | Default concurrency for `run_phase.sh` (1-5). Overridden by `-j` / `--jobs`. |
 
 Override for a non-standard installation:
 
 ```bash
 CLAUDE_BIN=/opt/homebrew/bin/claude ./run_task.sh T01
+
+# Set default concurrency for all phases
+CS601_JOBS=2 ./run_phase.sh textbook
 ```
 
 ## Execution Order
