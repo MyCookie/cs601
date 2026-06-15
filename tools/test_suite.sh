@@ -361,7 +361,7 @@ echo ""
 # ===========================================================================
 echo -e "${BOLD}[Suite 8] Concurrency (--jobs)${RESET}"
 
-assert_nonempty "MAX_JOBS defaults to 5" "${MAX_JOBS}"
+assert_nonempty "MAX_JOBS is set" "${MAX_JOBS}"
 assert_eq "MAX_JOBS default value" "${MAX_JOBS}" "1"
 
 # validate_jobs accepts valid values
