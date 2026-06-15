@@ -129,6 +129,20 @@ if "${SCRIPT_DIR}/verify_task.sh" "$TASK_ID" 2>&1 | tee -a "${LOG_FILE}"; then
   info "Verification passed for ${TASK_ID}."
   git_commit_task "$TASK_ID"
   info "Committed to ${BRANCH}."
+
+  # -----------------------------------------------------------------------
+  # Merge into main
+  # -----------------------------------------------------------------------
+  info "Merging ${BRANCH} into main..."
+  git checkout main >/dev/null 2>&1 || git checkout -b main >/dev/null 2>&1
+  if git merge --no-ff "${BRANCH}" -m "merge: ${BRANCH}" >/dev/null 2>&1; then
+    info "Merged into main."
+  else
+    err "Merge conflict on ${BRANCH}. Leaving branch for manual resolution."
+    set_status "$TASK_ID" "failed"
+    exit 1
+  fi
+
   set_status "$TASK_ID" "passed"
 else
   err "Verification failed for ${TASK_ID}. Branch ${BRANCH} left for fixes."
@@ -138,5 +152,5 @@ else
   exit 1
 fi
 
-info "Task ${TASK_ID} complete. Branch: ${BRANCH}"
+info "Task ${TASK_ID} complete. Merged into main from ${BRANCH}."
 exit 0

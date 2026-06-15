@@ -390,6 +390,26 @@ assert_exit_code "run_phase.sh exits on missing phase" "2" "'${TOOLS_DIR}/run_ph
 assert_exit_code "run_phase.sh -j 3 exits on missing phase" "2" "'${TOOLS_DIR}/run_phase.sh' -j 3 2>/dev/null"
 assert_exit_code "run_phase.sh --jobs 0 rejects bad value" "2" "'${TOOLS_DIR}/run_phase.sh' --jobs 0 textbook 2>/dev/null"
 
+# run_task.sh contains merge logic
+if grep -q 'git merge --no-ff' "${TOOLS_DIR}/run_task.sh"; then
+  echo "  ${GREEN}PASS${RESET} run_task.sh contains merge-into-main logic"
+  TEST_PASS=$((TEST_PASS+1))
+else
+  echo "  ${RED}FAIL${RESET} run_task.sh missing merge-into-main logic"
+  TEST_FAIL=$((TEST_FAIL+1))
+fi
+TESTS_RUN=$((TESTS_RUN+1))
+
+# run_task.sh switches back to main on merge conflict
+if grep -q 'git checkout main' "${TOOLS_DIR}/run_task.sh"; then
+  echo "  ${GREEN}PASS${RESET} run_task.sh switches to main before merging"
+  TEST_PASS=$((TEST_PASS+1))
+else
+  echo "  ${RED}FAIL${RESET} run_task.sh doesn't switch to main before merging"
+  TEST_FAIL=$((TEST_FAIL+1))
+fi
+TESTS_RUN=$((TESTS_RUN+1))
+
 echo ""
 
 # ===========================================================================

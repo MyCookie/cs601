@@ -49,8 +49,9 @@ What happens:
 2. Creates a new git branch (`task/t01-ch01-ml-fundamentals`).
 3. Invokes Claude Code with `--dangerously-skip-permissions --effort max --disable-slash-commands`.
 4. Runs `verify_task.sh` on the created files.
-5. If verification passes (≥80%), commits and marks the task as passed.
+5. If verification passes (≥80%), commits, marks the task as passed, and **merges the branch into `main`** with `--no-ff`.
 6. If it fails, leaves the branch for manual inspection and marks the task as failed.
+7. On a merge conflict, the task is marked as failed and the branch is left for resolution.
 
 Full logs are written to `.task_logs/run_<TASK_ID>.log`.
 
@@ -190,6 +191,14 @@ cat .task_logs/run_T01.log
 **Branch conflict.** `run_task.sh` deletes stale local branches before creating a new one. If a remote branch exists with the same name, rename or delete it manually:
 ```bash
 git push origin --delete task/t01-ch01-ml-fundamentals
+```
+
+**Merge conflict after verification.** If a verified task conflicts with `main`, `run_task.sh` marks it as failed and leaves the branch. Resolve manually, then re-verify:
+```bash
+git checkout task/t01-ch01-ml-fundamentals
+# fix conflicts, commit
+git checkout main && git merge task/t01-ch01-ml-fundamentals
+./reset.sh T01 && ./verify_task.sh T01
 ```
 
 **macOS `grep` errors.** All scripts use POSIX-compatible `grep` (no `-P` flag). If you see issues, confirm your `grep` supports `-E`:
