@@ -362,7 +362,7 @@ echo ""
 echo -e "${BOLD}[Suite 8] Concurrency (--jobs)${RESET}"
 
 assert_nonempty "MAX_JOBS defaults to 5" "${MAX_JOBS}"
-assert_eq "MAX_JOBS default value" "${MAX_JOBS}" "5"
+assert_eq "MAX_JOBS default value" "${MAX_JOBS}" "1"
 
 # validate_jobs accepts valid values
 if validate_jobs 1 2>/dev/null; then echo "  ${GREEN}PASS${RESET} validate_jobs accepts 1"; TEST_PASS=$((TEST_PASS+1)); else echo "  ${RED}FAIL${RESET} validate_jobs accepts 1"; TEST_FAIL=$((TEST_FAIL+1)); fi; TESTS_RUN=$((TESTS_RUN+1))
@@ -376,7 +376,7 @@ if ! validate_jobs abc 2>/dev/null; then echo "  ${GREEN}PASS${RESET} validate_j
 if ! validate_jobs -1 2>/dev/null; then echo "  ${GREEN}PASS${RESET} validate_jobs rejects -1"; TEST_PASS=$((TEST_PASS+1)); else echo "  ${RED}FAIL${RESET} validate_jobs rejects -1"; TEST_FAIL=$((TEST_FAIL+1)); fi; TESTS_RUN=$((TESTS_RUN+1))
 
 # CS601_JOBS env var is respected
-if [[ "${MAX_JOBS}" == "5" ]]; then
+if [[ "${MAX_JOBS}" == "1" ]]; then
   echo "  ${GREEN}PASS${RESET} MAX_JOBS uses CS601_JOBS default"
   TEST_PASS=$((TEST_PASS+1))
 else

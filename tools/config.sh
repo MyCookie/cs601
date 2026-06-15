@@ -28,7 +28,7 @@ CLAUDE_FLAGS=(
 # ---------------------------------------------------------------------------
 # Default max concurrent Claude Code invocations.
 # Override via CS601_JOBS env var or --jobs / -j flag on run_phase.sh.
-MAX_JOBS="${CS601_JOBS:-5}"
+MAX_JOBS="${CS601_JOBS:-1}"
 
 validate_jobs() {
   local n="$1"

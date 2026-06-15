@@ -136,7 +136,7 @@ Clears the status and removes log files so the task can be re-run.
 | Variable | Default | Description |
 |---|---|---|
 | `CLAUDE_BIN` | `claude` | Path to the Claude Code binary. |
-| `CS601_JOBS` | `5` | Default concurrency for `run_phase.sh` (1-5). Overridden by `-j` / `--jobs`. |
+| `CS601_JOBS` | `1` | Default concurrency for `run_phase.sh` (1-5). Overridden by `-j` / `--jobs`. |
 
 Override for a non-standard installation:
 
