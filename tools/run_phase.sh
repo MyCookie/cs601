@@ -80,9 +80,11 @@ wait_slot() {
       fi
     done
     ACTIVE=$new_active
+    # Filter out dead PIDs — the while-read subshell exits non-zero when
+    # all PIDs are dead, so we need || true to prevent set -e from killing us.
     PIDS=($(printf '%s\n' "${PIDS[@]}" | while read p; do
       kill -0 "$p" 2>/dev/null && echo "$p"
-    done))
+    done || true))
 
     if (( ACTIVE >= MAX_PAR )); then
       sleep 5
@@ -111,13 +113,15 @@ done
 # Wait for all
 # ---------------------------------------------------------------------------
 info "Waiting for all jobs to complete..."
-for pid in "${PIDS[@]}"; do
-  if wait "$pid" 2>/dev/null; then
-    PASSED=$((PASSED + 1))
-  else
-    FAILED=$((FAILED + 1))
-  fi
-done
+if (( ${#PIDS[@]} > 0 )); then
+  for pid in "${PIDS[@]}"; do
+    if wait "$pid" 2>/dev/null; then
+      PASSED=$((PASSED + 1))
+    else
+      FAILED=$((FAILED + 1))
+    fi
+  done
+fi
 
 echo ""
 echo -e "${BOLD}=== Phase '${PHASE}' Complete ===${RESET}"

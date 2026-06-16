@@ -400,6 +400,33 @@ else
 fi
 TESTS_RUN=$((TESTS_RUN+1))
 
+# Regression: wait_slot must survive dead PIDs with set -euo pipefail
+# (bug: PIDS rebuild subshell returned non-zero, killing the script)
+if bash -euo pipefail -c '
+  PIDS=(); sleep 0.01 & PIDS+=($!); wait $! 2>/dev/null || true
+  PIDS=($(printf "%s\n" "${PIDS[@]}" | while read p; do
+    kill -0 "$p" 2>/dev/null && echo "$p"
+  done || true))
+  echo "ok"
+' >/dev/null 2>&1; then
+  echo "  ${GREEN}PASS${RESET} wait_slot survives dead PID cleanup"
+  TEST_PASS=$((TEST_PASS+1))
+else
+  echo "  ${RED}FAIL${RESET} wait_slot crashes on dead PID cleanup"
+  TEST_FAIL=$((TEST_FAIL+1))
+fi
+TESTS_RUN=$((TESTS_RUN+1))
+
+# Regression: run_phase.sh wait guard for empty PIDS array
+if grep -q 'if (( \${#PIDS\[@\]} > 0 ))' "${TOOLS_DIR}/run_phase.sh"; then
+  echo "  ${GREEN}PASS${RESET} run_phase.sh guards empty PIDS in wait section"
+  TEST_PASS=$((TEST_PASS+1))
+else
+  echo "  ${RED}FAIL${RESET} run_phase.sh missing empty-PIDS guard"
+  TEST_FAIL=$((TEST_FAIL+1))
+fi
+TESTS_RUN=$((TESTS_RUN+1))
+
 # run_task.sh switches back to main on merge conflict
 if grep -q 'git checkout main' "${TOOLS_DIR}/run_task.sh"; then
   echo "  ${GREEN}PASS${RESET} run_task.sh switches to main before merging"
