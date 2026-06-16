@@ -400,6 +400,51 @@ else
 fi
 TESTS_RUN=$((TESTS_RUN+1))
 
+# run_task.sh --print-prompt outputs prompt and exits 0
+PROMPT_OUT="$( "${TOOLS_DIR}/run_task.sh" --print-prompt T01 2>&1 )"
+if echo "$PROMPT_OUT" | grep -q "=== Prompt for T01 ==="; then
+  echo "  ${GREEN}PASS${RESET} run_task.sh --print-prompt outputs prompt header"
+  TEST_PASS=$((TEST_PASS+1))
+else
+  echo "  ${RED}FAIL${RESET} run_task.sh --print-prompt missing prompt header"
+  TEST_FAIL=$((TEST_FAIL+1))
+fi
+TESTS_RUN=$((TESTS_RUN+1))
+
+if echo "$PROMPT_OUT" | grep -q "Definition of done:"; then
+  echo "  ${GREEN}PASS${RESET} run_task.sh --print-prompt includes DoD"
+  TEST_PASS=$((TEST_PASS+1))
+else
+  echo "  ${RED}FAIL${RESET} run_task.sh --print-prompt missing DoD"
+  TEST_FAIL=$((TEST_FAIL+1))
+fi
+TESTS_RUN=$((TESTS_RUN+1))
+
+if echo "$PROMPT_OUT" | grep -q "chapter_01"; then
+  echo "  ${GREEN}PASS${RESET} run_task.sh --print-prompt includes file list"
+  TEST_PASS=$((TEST_PASS+1))
+else
+  echo "  ${RED}FAIL${RESET} run_task.sh --print-prompt missing file list"
+  TEST_FAIL=$((TEST_FAIL+1))
+fi
+TESTS_RUN=$((TESTS_RUN+1))
+
+# print_prompt.sh exists and runs for multiple tasks
+if [ -f "${TOOLS_DIR}/print_prompt.sh" ] && [ -x "${TOOLS_DIR}/print_prompt.sh" ]; then
+  MULTI_OUT="$( "${TOOLS_DIR}/print_prompt.sh" T01 T02 2>&1 )"
+  if echo "$MULTI_OUT" | grep -q "=== Prompt for T01 ===" && echo "$MULTI_OUT" | grep -q "=== Prompt for T02 ==="; then
+    echo "  ${GREEN}PASS${RESET} print_prompt.sh outputs prompts for multiple tasks"
+    TEST_PASS=$((TEST_PASS+1))
+  else
+    echo "  ${RED}FAIL${RESET} print_prompt.sh missing one or more prompts"
+    TEST_FAIL=$((TEST_FAIL+1))
+  fi
+else
+  echo "  ${RED}FAIL${RESET} print_prompt.sh missing or not executable"
+  TEST_FAIL=$((TEST_FAIL+1))
+fi
+TESTS_RUN=$((TESTS_RUN+1))
+
 # Regression: wait_slot must survive dead PIDs with set -euo pipefail
 # (bug: PIDS rebuild subshell returned non-zero, killing the script)
 if bash -euo pipefail -c '

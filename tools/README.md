@@ -11,6 +11,9 @@ cd tools && ./test_suite.sh
 # Check what's pending
 ./status.sh all
 
+# Inspect the Claude prompt before running
+./run_task.sh --print-prompt T01
+
 # Run a single task
 ./run_task.sh T01
 
@@ -31,6 +34,7 @@ cd tools && ./test_suite.sh
 | `config.sh` | Shared library — never run directly. Sourced by all other scripts. |
 | `run_task.sh` | Execute one task: branch → Claude Code → verify → commit. |
 | `run_phase.sh` | Execute all tasks in a phase concurrently with a job-limit semaphore. |
+| `print_prompt.sh` | Print the Claude prompt for one or more tasks without running them. |
 | `verify_task.sh` | Grade a completed task against 7 automated checks. |
 | `test_suite.sh` | Self-test the toolchain (parsers, status, fixtures, syntax). |
 | `status.sh` | Show pass/fail/pending status for all tasks in a phase. |
@@ -42,6 +46,24 @@ cd tools && ./test_suite.sh
 
 ```bash
 ./run_task.sh T01
+```
+
+#### Print the prompt without running
+
+Use `--print-prompt` / `-p` on `run_task.sh` or the standalone `print_prompt.sh` to inspect the exact prompt sent to Claude for a task:
+
+```bash
+./run_task.sh --print-prompt T01
+./run_task.sh -p T03
+
+# Print prompts for multiple tasks
+./print_prompt.sh T01 T02 T03
+```
+
+The output includes the full prompt text, definition of done, and required files. Pipe to a file for manual review:
+
+```bash
+./run_task.sh -p T05 > prompt_t05.txt
 ```
 
 What happens:

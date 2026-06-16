@@ -2,7 +2,9 @@
 # Licensed under Apache 2.0
 # Run a single CS601 task via Claude Code.
 #
-# Usage:  ./run_task.sh <TASK_ID>
+# Usage:  ./run_task.sh [-p] <TASK_ID>
+#
+#   -p, --print-prompt   Print the prompt instead of running Claude
 #
 # The script:
 #   1. Extracts task metadata from TASKS.md
@@ -16,9 +18,29 @@ set -euo pipefail
 SCRIPT_DIR="$(cd "$(dirname "$0")" && pwd)"
 source "${SCRIPT_DIR}/config.sh"
 
+# ---------------------------------------------------------------------------
+# Parse flags
+# ---------------------------------------------------------------------------
+PRINT_PROMPT=0
+
+while [[ $# -gt 0 ]]; do
+  case "$1" in
+    -p|--print-prompt)
+      PRINT_PROMPT=1; shift
+      ;;
+    -*)
+      err "Unknown option: $1"
+      exit 2
+      ;;
+    *)
+      break
+      ;;
+  esac
+done
+
 TASK_ID="${1:-}"
 if [ -z "${TASK_ID}" ]; then
-  err "Usage: $0 <TASK_ID>"
+  err "Usage: $0 [-p] <TASK_ID>"
   echo "  e.g.  $0 T01"
   exit 2
 fi
@@ -36,26 +58,6 @@ TITLE="$(task_title "$TASK_ID" || echo "Task ${TASK_ID}")"
 DOD="$(task_dod "$TASK_ID")"
 FILES="$(task_files "$TASK_ID")"
 BLOCK="$(task_block "$TASK_ID")"
-
-info "Task:     ${TASK_ID} — ${TITLE}"
-info "Branch:   ${BRANCH}"
-info "Log:      ${LOG_FILE}"
-
-# ---------------------------------------------------------------------------
-# Skip if already passed
-# ---------------------------------------------------------------------------
-CURRENT_STATUS="$(task_status "$TASK_ID")"
-if [[ "$CURRENT_STATUS" == "passed" ]]; then
-  info "Task ${TASK_ID} already passed. Use --force to re-run."
-  exit 0
-fi
-
-# ---------------------------------------------------------------------------
-# Create branch
-# ---------------------------------------------------------------------------
-cd "${REPO_ROOT}"
-git_create_branch "$BRANCH"
-info "Created branch ${BRANCH}"
 
 # ---------------------------------------------------------------------------
 # Build the Claude prompt
@@ -90,6 +92,38 @@ ${FILES}
 
 Write every file in full. Do not leave TODOs or placeholders. When finished,
 list all files you created."
+
+info "Task:     ${TASK_ID} — ${TITLE}"
+info "Branch:   ${BRANCH}"
+info "Log:      ${LOG_FILE}"
+
+# ---------------------------------------------------------------------------
+# Print prompt mode: dump prompt and exit
+# ---------------------------------------------------------------------------
+if (( PRINT_PROMPT )); then
+  echo "=== Prompt for ${TASK_ID} ==="
+  echo ""
+  echo "${PROMPT}"
+  echo ""
+  echo "=== End of prompt (${#PROMPT} chars) ==="
+  exit 0
+fi
+
+# ---------------------------------------------------------------------------
+# Skip if already passed
+# ---------------------------------------------------------------------------
+CURRENT_STATUS="$(task_status "$TASK_ID")"
+if [[ "$CURRENT_STATUS" == "passed" ]]; then
+  info "Task ${TASK_ID} already passed. Use --force to re-run."
+  exit 0
+fi
+
+# ---------------------------------------------------------------------------
+# Create branch
+# ---------------------------------------------------------------------------
+cd "${REPO_ROOT}"
+git_create_branch "$BRANCH"
+info "Created branch ${BRANCH}"
 
 # ---------------------------------------------------------------------------
 # Invoke Claude Code
